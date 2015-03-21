@@ -34,11 +34,14 @@ processData<-function(resultSet,toFile) {
   if (resultSet == 'test') {
     yFile<-"UCI HAR Dataset/test/y_test.txt"
     xFile<-"UCI HAR Dataset/test/X_test.txt"
+    sFile<-"UCI HAR Dataset/test/subject_test.txt"
+    
   }
   else if ( resultSet == 'train')
   {
     yFile<-"UCI HAR Dataset/train/y_train.txt"
     xFile<-"UCI HAR Dataset/train/X_train.txt"
+    sFile<-"UCI HAR Dataset/train/subject_train.txt"
   }
   else
   {
@@ -56,39 +59,58 @@ processData<-function(resultSet,toFile) {
   con <-unz(toFile,yFile)
   y<-readLines(con)
   close(con)
+#
+# Read the subject file
+#
+con <-unz(toFile,sFile)
+subject<-readLines(con)
+close(con)
 
 #
 # The number of lines in x and y files must match
 #
-    if ( length(x) != length(y)) {
-     stop("x and y file length mismatch - data files corrupt")
+    if ( length(x) != length(y) || length(x) != length(subject)) {
+     stop("subject, x and y file length mismatch - data files corrupt")
    }
 
 #
 # Go through the x lines and process
 #
-  nos<-vector(mode='list',length=6)
+  measurementTypes <- c("Walking","walking upstairs","walking downstairs","sitting","standing","Laying")
+  distSubjects <- unique(subject)
+  lenMeasures <- length(measurementTypes)
+  lenDistSubjects<-length(distSubjects)
+  vectLen<-lenMeasures*lenDistSubjects
+ 
+  nos<-vector(mode='list',length=vectLen)
 
   for (i in 1:length(y)) {
     tmp<-gsub('^( *)|)( *)$','',x[i]) # Remove preceeding & trailing spaces
     tmp<-strsplit(tmp,'( +)') # Split the string at the spaces
-    indx<-as.numeric(y[i])
-    nos[[indx]]<-c(nos[[indx]],as.numeric(unlist(tmp))) # coerce to numbers vector
+    posSubject<-match(subject[i],distSubjects)
+    posMeasure<-as.numeric(y[i])
+    vecPos<-(posSubject - 1) * lenMeasures + posMeasure
+ 
+    nos[[vecPos]]<-c(nos[[vecPos]],as.numeric(unlist(tmp))) # coerce to numbers vector
   }
-#
-# Declare the measurement Types
-#
-  measurementTypes=c("Walking","walking upstairs","walking downstairs","sitting","standing","Laying")
 
 #
 # Build data frame
 #
-  df<-data.frame(subject=character(),activity=character(),average=numeric(),std.deviation=numeric(),stringsAsFactors=FALSE)
-  for ( i in 1:length(measurementTypes)) {
-    df[i,1]<-resultSet
-    df[i,2]<-measurementTypes[i]
-    df[i,3]<-mean(nos[[i]])
-    df[i,4]<-sd(nos[[i]])
+  df<-data.frame(subject=numeric(),result.set=character(),activity=character(),average=numeric(),std.deviation=numeric(),stringsAsFactors=FALSE)
+  i<-1
+  for ( k in 1:length(distSubjects) ) {
+    for ( j in 1:length(measurementTypes)) {
+        
+      vecPos<-(k - 1) * lenMeasures + j
+      
+      df[i,1]<-distSubjects[k]
+      df[i,2]<-resultSet
+      df[i,3]<-measurementTypes[j]
+      df[i,4]<-mean(nos[[vecPos]])
+      df[i,5]<-sd(nos[[vecPos]])
+      i<-i+1
+    }
   }
   df
 }
