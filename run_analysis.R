@@ -26,7 +26,7 @@ downloadData<-function(url, toFile,overwrite=False) {
   }
 }
 
-processData<-function(resultSet,toFile) {
+processData<-function(resultSet,zipFile) {
   
 #
 # Set up the appropriate files based on the resultSet type
@@ -50,19 +50,19 @@ processData<-function(resultSet,toFile) {
 #
 # Read the X file
 #
-  con <-unz(toFile,xFile)
+  con <-unz(zipFile,xFile)
   x<-readLines(con)
   close(con)
 #
 # Read the y file
 #
-  con <-unz(toFile,yFile)
+  con <-unz(zipFile,yFile)
   y<-readLines(con)
   close(con)
 #
 # Read the subject file
 #
-con <-unz(toFile,sFile)
+con <-unz(zipFile,sFile)
 subject<-readLines(con)
 close(con)
 
